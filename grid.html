@@ -254,7 +254,7 @@ function generateNextState(currentState, minNeighbors, maxNeighbors) {
           color(255, 0, 0),   // Red
           color(255, 0, 0)    // Red
         ];
-      } else if (temp >= 90 && temp <= 99) {
+      } else if (temp >= 90 && temp <= 99.99) {
         colors = [
             color(255, 0, 0),   // Red
           color(255, 165, 0), // Orange
@@ -262,7 +262,7 @@ function generateNextState(currentState, minNeighbors, maxNeighbors) {
           color(255, 255, 0), // Yellow
           color(255, 255, 0)  // Yellow
         ];
-      } else if (temp >= 80 && temp <= 89) {
+      } else if (temp >= 80 && temp <= 89.99) {
         colors = [
            color(255,17,76), //rose
           color(225,0,113),  
@@ -272,13 +272,13 @@ function generateNextState(currentState, minNeighbors, maxNeighbors) {
         ];
       } else if (temp >= 70 && temp <= 79.99) {
         colors = [
-             color(255,17,76), //rose
+             color(255,17,76), //brigher pink
           color(225,0,113),  
           color(155,8,96),  
           color(255,15,74),   
           color(255,16,86) 
         ];
-      } else if (temp >= 60 && temp <= 69) {
+      } else if (temp >= 60 && temp <= 69.99) {
         colors = [
           color(255, 170, 0), // Orange
           color(205, 255, 0), // Yellow
@@ -294,7 +294,7 @@ function generateNextState(currentState, minNeighbors, maxNeighbors) {
           color(0, 252, 146),   // Green
           color(0, 255, 0)    // Green
         ];
-      } else if (temp >= 40 && temp <= 49) {
+      } else if (temp >= 40 && temp <= 49.99) {
         colors = [
           color(245,102,156),   //pale pink   
           color(197,90,134),       
@@ -302,7 +302,7 @@ function generateNextState(currentState, minNeighbors, maxNeighbors) {
           color(91,51,116),    
           color(47,35,93)       
         ];
-      } else if (temp >= 30 && temp <= 39) {
+      } else if (temp >= 30 && temp <= 39.99) {
         colors = [
          color(0, 0, 205),   // Blue
           color(0, 150, 255),   // Blue
@@ -310,7 +310,7 @@ function generateNextState(currentState, minNeighbors, maxNeighbors) {
           color(0, 0, 255),   // Blue
           color(0, 0, 255)    // Blue      
         ];
-      } else if (temp >= 20 && temp <= 29) {
+      } else if (temp >= 20 && temp <= 29.99) {
         colors = [
           color(253,255,254),   // pale teal
           color(39,47,115),   
@@ -318,7 +318,7 @@ function generateNextState(currentState, minNeighbors, maxNeighbors) {
           color(23,132,116),  
           color(25,103,91)    
         ];
-      } else if (temp >= 10 && temp <= 19) {
+      } else if (temp >= 10 && temp <= 19.99) {
         colors = [
           color(255, 0, 0),   // Red
           color(255, 0, 0),   // Red
@@ -343,23 +343,23 @@ function generateNextState(currentState, minNeighbors, maxNeighbors) {
       // Adjust frame rate based on temperature
       if (temp >= 100 && temp <= 120) {
         frameRate(20); // Set highest frame rate for temperature between 100-120°F
-      } else if (temp >= 90 && temp <= 99) {
+      } else if (temp >= 90 && temp <= 99.99) {
         frameRate(15); // Set medium frame rate for temperature between 90-89°F
-      } else if (temp >= 80 && temp <= 89) {
+      } else if (temp >= 80 && temp <= 89.99) {
         frameRate(12); // Set slower 80-89
       } else if (temp >= 70 && temp <= 79.99) {
         frameRate(10); // Set slower frame rate for temperature between 70-79°F
-      } else if (temp >= 60 && temp <= 69) {
+      } else if (temp >= 60 && temp <= 69.99) {
         frameRate(8); // Set slower 60-69
       } else if (temp >= 50 && temp <= 59.99) {
         frameRate(5); // Set slower 50-59
-      } else if (temp >= 40 && temp <= 49) {
+      } else if (temp >= 40 && temp <= 49.99) {
         frameRate(2); // Set slower 40-49
-      } else if (temp >= 30 && temp <= 39) {
+      } else if (temp >= 30 && temp <= 39.99) {
         frameRate(0.75); // Set slower 30-39
-      } else if (temp >= 20 && temp <= 29) {
+      } else if (temp >= 20 && temp <= 29.99) {
         frameRate(0.25); // Set slower 20-29
-      } else if (temp >= 10 && temp <= 19) {
+      } else if (temp >= 10 && temp <= 19.99) {
         frameRate(0.15); // Set slower 10-19
       } else {
         frameRate(0.0625); // Set default frame rate for other temperature ranges
