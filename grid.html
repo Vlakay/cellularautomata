@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conway's Game of Life - Weather Intelligent</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jersey+15&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geologica:wght@100..900&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      display: flex; /* Use flexbox to center the canvas */
+      justify-content: center; /* Center horizontally */
+      align-items: center; /* Center vertically */
+      height: 100vh;
+      background-repeat: no-repeat; /* Prevent background from repeating */
+      background-size: cover; /* Cover the entire viewport */
+      position: relative; /* Make the body a positioned parent */
+    }
+    
+       canvas {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    #automataCanvas {
+      width: 500px; /* Set a fixed width for the canvas */
+      height: 500px; /* Set a fixed height for the canvas */
+    }
+
+    #weatherInfo {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      color: rgb(191, 76, 245);
+      padding: 10px; /* Add padding to the weather info container */
+      text-align: right; /* Align text to the right within the container */
+    }
+    .jersey-15-regular {
+  font-family: "Jersey 15", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+     // <uniquifier>: Use a unique and descriptive class name
+// <weight>: Use a value from 100 to 900
+
+.geologica-<uniquifier> {
+  font-family: "Geologica", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: <weight>;
+  font-style: normal;
+  font-variation-settings:
+    "slnt" 0,
+    "CRSV" 0,
+    "SHRP" 0;
+}
+ 
+    h2{
+         font-family: "Geologica", sans-serif;
+      font-size: 17px;
+    }
+  </style>
+</head>
+<body>
+  <div id="weatherInfo">
+    <h2 id="temperature"></h2>
+    <h2 id="humidity"></h2>
+  </div>
+  <canvas id="automataCanvas"></canvas>
+
+  <script>
+    let boxWid = 15; // Width of each cell
+    let gridLn = 60; // Grid is size gridLn x gridLn
+    let currentState; // Current state of the grid
+    let temperature; // Variable to store temperature data
+    let humidity; // Variable to store humidity data
+    let isDrawing = false; // Flag to indicate whether the user is drawing
+    let noiseScale = 0.1; // Adjust the scale of the Perlin noise
+
+    function setup() {
+      createCanvas(gridLn * boxWid, gridLn * boxWid);
+      background(255,0); // Set white background
+      frameRate(1); // Set default frame rate to 1 frame per second
+
+      // Initialize grid with Perlin noise
+      currentState = generatePerlinNoiseGrid(gridLn);
+
+      // Fetch weather data
+      fetchWeatherData();
+    }
+
+    function draw() {
+      clear(); // Clear canvas each frame
+      displayGrid(currentState); // Display current state
+
+      // Generate next state only if temperature and humidity are defined
+      if (temperature !== undefined && humidity !== undefined) {
+        // Adjust cell growth rate based on temperature and humidity
+        let humidityAdjustedRules = adjustSurvivalRules(humidity); // Adjust survival rules based on humidity
+        let minNeighbors = humidityAdjustedRules.minNeighbors;
+        let maxNeighbors = humidityAdjustedRules.maxNeighbors;
+
+        // Adjust frame rate based on temperature
+        adjustFrameRate(temperature);
+
+        // Generate next state only if not drawing
+        if (!isDrawing) {
+          currentState = generateNextState(currentState, minNeighbors, maxNeighbors);
+        }
+      }
+    }
+
+    function mousePressed() {
+      isDrawing = true;
+    }
+
+    function mouseReleased() {
+      isDrawing = false;
+    }
+
+    function mouseDragged() {
+      if (isDrawing) {
+        let i = floor(mouseX / boxWid);
+        let j = floor(mouseY / boxWid);
+        if (i >= 0 && i < gridLn && j >= 0 && j < gridLn) {
+          currentState[i][j] = 1;
+        }
+      }
+    }
+
+    function generatePerlinNoiseGrid(size) {
+      let grid = [];
+      for (let x = 0; x < size; x++) {
+        let row = [];
+        for (let y = 0; y < size; y++) {
+          // Generate Perlin noise value and map to 0 or 1
+          let noiseValue = noise(x * noiseScale, y * noiseScale);
+          row.push(noiseValue > 0.5 ? 1 : 0);
+        }
+        grid.push(row);
+      }
+      return grid;
+    }
+
+function displayGrid(grid) {
+  // Calculate the offset to center the grid on the canvas
+  let xOffset = (width - gridLn * boxWid) / 2;
+  let yOffset = (height - gridLn * boxWid) / 2;
+
+  noStroke(); // Remove outline color
+
+  for (let i = 0; i < gridLn; i++) {
+    for (let j = 0; j < gridLn; j++) {
+      if (grid[i][j] === 1) {
+        // Use Perlin noise to determine cell color
+        let noiseValue = noise(i * noiseScale, j * noiseScale);
+        let tempColor = getColorForTemperature(temperature);
+        let textureColor = lerpColor(color(164), tempColor, noiseValue); // Interpolate between white and temperature color based on noise value
+
+        fill(textureColor);
+        // Draw circular cells instead of squares
+        ellipse(i * boxWid + boxWid / 2 + xOffset, j * boxWid + boxWid / 2 + yOffset, boxWid, boxWid);
+      }
+    }
+  }
+}
+
+function generateNextState(currentState, minNeighbors, maxNeighbors) {
+  let nextState = [];
+  for (let i = 0; i < gridLn; i++) {
+    let newRow = [];
+    for (let j = 0; j < gridLn; j++) {
+      let neighbors = countNeighbors(currentState, i, j);
+      let cellState = currentState[i][j];
+      
+      if (cellState === 1 && (neighbors < minNeighbors || neighbors > maxNeighbors)) {
+        newRow.push(0); // Any live cell with fewer than two live neighbors dies, as if by underpopulation
+      } else if (cellState === 1 && (neighbors === 2 || neighbors === 3)) {
+        newRow.push(1); // Any live cell with two or three live neighbors lives on to the next generation
+      } else if (cellState === 0 && neighbors === 3) {
+        newRow.push(1); // Any dead cell with exactly three live neighbors becomes a live cell, as if by reproduction
+      } else {
+        newRow.push(0); // Any other live cell dies, and any other dead cell stays dead
+      }
+    }
+    nextState.push(newRow);
+  }
+  return nextState;
+}
+
+
+    function countNeighbors(grid, x, y) {
+      let sum = 0;
+      for (let i = -1; i <= 1; i++) {
+        for (let j = -1; j <= 1; j++) {
+          let row = (x + i + gridLn) % gridLn;
+          let col = (y + j + gridLn) % gridLn;
+          sum += grid[row][col];
+        }
+      }
+      sum -= grid[x][y]; // Subtract cell's own state
+      return sum;
+    }
+
+    function fetchWeatherData() {
+      let apiKey = '0cea83c01b41610f0943b01157225751';
+      let city = 'Chicago';
+      let apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=imperial`;
+
+      // Fetch weather data
+      fetch(apiUrl)
+        .then(response => response.json())
+        .then(data => {
+          if (data.main && data.main.temp) {
+            temperature = data.main.temp; // Temperature in Fahrenheit
+            console.log('Temperature:', temperature, '°F');
+            if (data.main.humidity) {
+              humidity = data.main.humidity; // Humidity in percentage
+              console.log('Humidity:', humidity, '%');
+            } else {
+              console.error('Humidity data not found in API response');
+            }
+          } else {
+            throw new Error('Temperature data not found in API response');
+          }
+
+          // Update the temperature and humidity elements with fetched data
+          document.getElementById('temperature').textContent = `Temperature: ${temperature} °F`;
+          document.getElementById('humidity').textContent = `Humidity: ${humidity}%`;
+        })
+        .catch(error => console.error('Error fetching weather data:', error));
+    }
+
+    function getColorForTemperature(temp) {
+      // Define color gradients for each temperature range
+      let colors;
+      if (temp >= 100 && temp <= 120) {
+        colors = [
+           color(255, 0, 0),   // Red
+          color(255, 0, 0),   // Red
+          color(255, 0, 0),   // Red
+          color(255, 0, 0),   // Red
+          color(255, 0, 0)    // Red
+        ];
+      } else if (temp >= 90 && temp <= 99) {
+        colors = [
+            color(255, 0, 0),   // Red
+          color(255, 165, 0), // Orange
+          color(255, 255, 0), // Yellow
+          color(255, 255, 0), // Yellow
+          color(255, 255, 0)  // Yellow
+        ];
+      } else if (temp >= 80 && temp <= 89) {
+        colors = [
+           color(255,17,76), //rose
+          color(225,0,113),  
+          color(155,8,96),  
+          color(255,15,74),   
+          color(255,16,86) 
+        ];
+      } else if (temp >= 70 && temp <= 79.99) {
+        colors = [
+             color(255,17,76), //rose
+          color(225,0,113),  
+          color(155,8,96),  
+          color(255,15,74),   
+          color(255,16,86) 
+        ];
+      } else if (temp >= 60 && temp <= 69) {
+        colors = [
+          color(255, 170, 0), // Orange
+          color(205, 255, 0), // Yellow
+          color(255, 255, 0), // Yellow
+          color(255, 225, 0), // Yellow
+          color(255, 255, 0)  // Yellow
+        ];
+      } else if (temp >= 50 && temp <= 59.99) {
+        colors = [
+          color(0,252,105),   // Green
+          color(0,217,98),   // Green
+          color(0,252,58),   // Green
+          color(0, 252, 146),   // Green
+          color(0, 255, 0)    // Green
+        ];
+      } else if (temp >= 40 && temp <= 49) {
+        colors = [
+          color(245,102,156),   //pale pink   
+          color(197,90,134),       
+          color(158,69,119),        
+          color(91,51,116),    
+          color(47,35,93)       
+        ];
+      } else if (temp >= 30 && temp <= 39) {
+        colors = [
+         color(0, 0, 205),   // Blue
+          color(0, 150, 255),   // Blue
+          color(0, 0, 25),   // Blue
+          color(0, 0, 255),   // Blue
+          color(0, 0, 255)    // Blue      
+        ];
+      } else if (temp >= 20 && temp <= 29) {
+        colors = [
+          color(253,255,254),   // pale teal
+          color(39,47,115),   
+          color(104,202,200),   
+          color(23,132,116),  
+          color(25,103,91)    
+        ];
+      } else if (temp >= 10 && temp <= 19) {
+        colors = [
+          color(255, 0, 0),   // Red
+          color(255, 0, 0),   // Red
+          color(255, 0, 0),   // Red
+          color(255, 0, 0),   // Red
+          color(255, 0, 0)    // Red
+        ];
+      } else {
+        colors = [
+          color(1,0,1),         // White
+          color(14,41,39),         // White
+          color(16,79,79),         // White
+          color(115,151,143),         // White
+          color(151,180,170)          // White
+        ];
+      }
+      // Return a random color from the defined colors array
+      return random(colors);
+    }
+
+    function adjustFrameRate(temp) {
+      // Adjust frame rate based on temperature
+      if (temp >= 100 && temp <= 120) {
+        frameRate(20); // Set highest frame rate for temperature between 100-120°F
+      } else if (temp >= 90 && temp <= 99) {
+        frameRate(15); // Set medium frame rate for temperature between 90-89°F
+      } else if (temp >= 80 && temp <= 89) {
+        frameRate(12); // Set slower 80-89
+      } else if (temp >= 70 && temp <= 79.99) {
+        frameRate(10); // Set slower frame rate for temperature between 70-79°F
+      } else if (temp >= 60 && temp <= 69) {
+        frameRate(8); // Set slower 60-69
+      } else if (temp >= 50 && temp <= 59.99) {
+        frameRate(5); // Set slower 50-59
+      } else if (temp >= 40 && temp <= 49) {
+        frameRate(2); // Set slower 40-49
+      } else if (temp >= 30 && temp <= 39) {
+        frameRate(0.75); // Set slower 30-39
+      } else if (temp >= 20 && temp <= 29) {
+        frameRate(0.25); // Set slower 20-29
+      } else if (temp >= 10 && temp <= 19) {
+        frameRate(0.15); // Set slower 10-19
+      } else {
+        frameRate(0.0625); // Set default frame rate for other temperature ranges
+      }
+    }
+
+    function adjustSurvivalRules(humidity) {
+      if (humidity > 80) {
+        // High humidity, increase chance of survival
+        return {
+          minNeighbors: 2,
+          maxNeighbors: 4
+        };
+      } else if (humidity > 50) {
+        // Moderate humidity, standard survival rules
+        return {
+          minNeighbors: 2,
+          maxNeighbors: 3
+        };
+      } else {
+        // Low humidity, decrease chance of survival
+        return {
+          minNeighbors: 1,
+          maxNeighbors: 3
+        };
+      }
+    }
+
+    // Replace 'YOUR_API_KEY' with your actual Flickr API key
+    const apiKey = '4eba122c1d05700a33765447bc7e3b85';
+    const keyword = 'nature'; // Example keyword to search for
+
+    // Function to fetch a random image from Flickr and update the background
+    function updateBackgroundFromFlickr() {
+      // Construct the API request URL
+      const apiUrl = `https://www.flickr.com/services/rest/?method=flickr.photos.search&api_key=${apiKey}&text=${keyword}&format=json&nojsoncallback=1`;
+
+      // Make the API request
+      fetch(apiUrl)
+        .then(response => response.json())
+        .then(data => {
+          // Process the response data
+          const photos = data.photos.photo;
+          if (photos.length > 0) {
+            // Get a random photo from the list
+            const randomIndex = Math.floor(Math.random() * photos.length);
+            const photo = photos[randomIndex];
+            const imgUrl = `https://farm${photo.farm}.staticflickr.com/${photo.server}/${photo.id}_${photo.secret}.jpg`;
+            document.body.style.backgroundImage = `url('${imgUrl}')`;
+          } else {
+            console.error('No images found on Flickr for the specified keyword.');
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching images from Flickr:', error);
+        });
+    }
+
+    // Call the function to update the background initially
+    updateBackgroundFromFlickr();
+
+    // Set interval to update background every 10 seconds
+    setInterval(updateBackgroundFromFlickr, 9500);
+  </script>
+</body>
+</html>
